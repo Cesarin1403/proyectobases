@@ -1,0 +1,53 @@
+employee_id: string @index(exact) .
+name: string .
+role: string .
+email: string .
+assigned_tasks: [uid] @reverse .
+reports_to: uid .
+
+team_id: string @index(exact) .
+team_name: string .
+members: [uid] .
+leader: uid .
+
+project_id: string @index(exact) .
+status: string @index(exact) .
+teams: [uid] .
+
+task_id: string @index(exact) .
+title: string .
+priority: string .
+due_date: dateTime .
+depends_on: [uid] @reverse .
+
+type Employee {
+  employee_id
+  name
+  role
+  email
+  assigned_tasks
+  reports_to
+}
+
+type Team {
+  team_id
+  team_name
+  members
+  leader
+}
+
+type Project {
+  project_id
+  name
+  status
+  teams
+}
+
+type Task {
+  task_id
+  title
+  status
+  priority
+  due_date
+  depends_on
+}

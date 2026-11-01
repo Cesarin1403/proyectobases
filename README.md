@@ -31,6 +31,7 @@ proyectobases/
 ├── connect.py     conexión a las tres bases de datos
 ├── populate.py    pasos para cargar los datos de prueba
 ├── main.py        menú de consultas
+├── requirements.txt  librerías de Python
 └── README.md
 ```
 
@@ -53,19 +54,27 @@ Si los contenedores ya existen, solo se prenden con `docker start <nombre>`.
 
 python3 -m venv ./venv
 source venv/bin/activate
-pip install pymongo cassandra-driver pydgraph
+pip install -r requirements.txt
 
 **3. Cargar el esquema de Dgraph**
 
 Abrir Ratel en http://localhost:8000, ir a la pestaña Schema, elegir Bulk Edit y pegar el contenido de `Dgraph/schema.dql`.
 
-**4. Cargar los datos de prueba**
+**4. Probar las conexiones**
+
+```
+python3 connect.py
+```
+
+Si las tres bases están prendidas, imprime un mensaje por cada una.
+
+**5. Cargar los datos de prueba**
 
 python3 populate.py
 
 Crea las tablas de Cassandra y los índices de MongoDB, y carga los datos de prueba en las tres bases.
 
-**5. Correr las consultas**
+**6. Correr las consultas**
 
 python3 main.py
 

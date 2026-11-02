@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import datetime
 
 KEYSPACE = "taskflow"
 
@@ -31,7 +31,7 @@ CREATE_TABLES = {
     "activity_by_project_day": """
         CREATE TABLE IF NOT EXISTS activity_by_project_day (
             project_id text,
-            activity_date date,
+            activity_date text,
             activity_timestamp timestamp,
             activity_id uuid,
             task_id text,
@@ -41,22 +41,11 @@ CREATE_TABLES = {
             PRIMARY KEY ((project_id, activity_date), activity_timestamp, activity_id)
         ) WITH CLUSTERING ORDER BY (activity_timestamp DESC, activity_id ASC)
     """,
-    "status_changes_by_task": """
-        CREATE TABLE IF NOT EXISTS status_changes_by_task (
-            task_id text,
-            change_timestamp timestamp,
-            change_id uuid,
-            previous_status text,
-            new_status text,
-            employee_id text,
-            PRIMARY KEY ((task_id), change_timestamp, change_id)
-        ) WITH CLUSTERING ORDER BY (change_timestamp ASC, change_id ASC)
-    """,
     "hours_by_employee_month": """
         CREATE TABLE IF NOT EXISTS hours_by_employee_month (
             employee_id text,
             year_month text,
-            log_date date,
+            log_date timestamp,
             log_id uuid,
             task_id text,
             project_id text,
@@ -86,18 +75,6 @@ CREATE_TABLES = {
             PRIMARY KEY ((team_id), completed_at, task_id)
         ) WITH CLUSTERING ORDER BY (completed_at DESC, task_id ASC)
     """,
-    "activity_by_project_employee": """
-        CREATE TABLE IF NOT EXISTS activity_by_project_employee (
-            project_id text,
-            employee_id text,
-            activity_timestamp timestamp,
-            activity_id uuid,
-            task_id text,
-            activity_type text,
-            description text,
-            PRIMARY KEY ((project_id, employee_id), activity_timestamp, activity_id)
-        ) WITH CLUSTERING ORDER BY (activity_timestamp DESC, activity_id ASC)
-    """,
 }
 
 QUERIES = {
@@ -119,31 +96,20 @@ QUERIES = {
         WHERE project_id = ? AND activity_date = ?
     """,
     "R4": """
-        SELECT task_id, change_timestamp, previous_status, new_status, employee_id
-        FROM status_changes_by_task
-        WHERE task_id = ?
-    """,
-    "R5": """
         SELECT employee_id, year_month, log_date, task_id, project_id, hours_worked
         FROM hours_by_employee_month
         WHERE employee_id = ? AND year_month = ?
     """,
-    "R6": """
+    "R5": """
         SELECT task_id, comment_timestamp, employee_id, employee_name, comment_text
         FROM comments_by_task
         WHERE task_id = ?
         LIMIT 10
     """,
-    "R7": """
+    "R6": """
         SELECT team_id, completed_at, task_id, task_title, project_id, employee_id
         FROM completed_tasks_by_team
         WHERE team_id = ? AND completed_at >= ? AND completed_at <= ?
-    """,
-    "R8": """
-        SELECT project_id, employee_id, activity_timestamp, task_id, activity_type, description
-        FROM activity_by_project_employee
-        WHERE project_id = ? AND employee_id = ?
-        LIMIT 30
     """,
 }
 
@@ -198,25 +164,17 @@ def get_employee_activity(session, employee_id, start: datetime, end: datetime):
     return rows
 
 
-def get_project_activity_by_day(session, project_id, day: date):
+def get_project_activity_by_day(session, project_id, day: str):
     return list(session.execute(_stmt(session, "R3"), (project_id, day)))
 
 
-def get_task_status_history(session, task_id):
-    return list(session.execute(_stmt(session, "R4"), (task_id,)))
-
-
 def get_employee_hours(session, employee_id, ym: str):
-    return list(session.execute(_stmt(session, "R5"), (employee_id, ym)))
+    return list(session.execute(_stmt(session, "R4"), (employee_id, ym)))
 
 
 def get_task_comments(session, task_id):
-    return list(session.execute(_stmt(session, "R6"), (task_id,)))
+    return list(session.execute(_stmt(session, "R5"), (task_id,)))
 
 
 def get_team_completed_tasks(session, team_id, start: datetime, end: datetime):
-    return list(session.execute(_stmt(session, "R7"), (team_id, start, end)))
-
-
-def get_employee_activity_in_project(session, project_id, employee_id):
-    return list(session.execute(_stmt(session, "R8"), (project_id, employee_id)))
+    return list(session.execute(_stmt(session, "R6"), (team_id, start, end)))
